@@ -1,0 +1,11 @@
+[build]
+  publish = "public"
+  command = "node scripts/generate-firebase-config.js"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

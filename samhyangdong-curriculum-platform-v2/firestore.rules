@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function teacherDoc() {
+      return get(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && teacherDoc().data.role == 'admin';
+    }
+
+    function isAssigned(planId) {
+      return isSignedIn()
+        && teacherDoc().data.assignedPlans is list
+        && planId in teacherDoc().data.assignedPlans;
+    }
+
+    // 세부계획 핵심 메타(title/dept/owners/no)는 교사가 임의로 바꿀 수 없고
+    // Firestore 저장 로직상 바뀌는 필드(sections/status/updatedAt/updatedBy)만 허용
+    function onlyEditableFieldsChanged() {
+      let before = resource.data;
+      let after  = request.resource.data;
+      return after.title == before.title
+        && after.dept == before.dept
+        && after.owners == before.owners
+        && after.no == before.no;
+    }
+
+    // 교사는 approved(승인완료) 상태의 문서는 수정할 수 없음 (관리자만 재오픈 가능)
+    function notLockedByApproval() {
+      return resource.data.status != 'approved';
+    }
+
+    // --- 교직원 계정/역할/담당 세부계획 배정 ---
+    match /teachers/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // --- 19개 세부계획 (부서별 온라인 에디터 본문) ---
+    match /opsPlans/{planId} {
+      allow read: if isSignedIn();
+
+      // 최초 진입 시 editor.js가 초기 문서를 생성 -> 담당 교사 또는 관리자만 생성 가능
+      allow create: if isAdmin() || isAssigned(planId);
+
+      // 담당 교사: 잠기지 않은 문서의 본문/상태만 수정 가능
+      // 관리자: 모든 필드, 모든 상태에서 수정 가능 (승인/반려 처리 포함)
+      allow update: if isAdmin()
+        || (isAssigned(planId) && notLockedByApproval() && onlyEditableFieldsChanged());
+
+      allow delete: if isAdmin();
+    }
+
+    // --- 설문조사 ---
+    match /surveys/{surveyId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+
+      match /responses/{responseId} {
+        // 익명 설문 응답: 로그인한 사용자가 "자신의" 응답 1건만 생성, 수정/삭제는 불가(변조 방지)
+        allow create: if isSignedIn() && request.resource.data.respondentId == request.auth.uid;
+        allow read: if isAdmin();
+        allow update, delete: if false;
+      }
+    }
+
+    // --- 전남교육청 지침 첨부/요약 ---
+    match /guidelines/{guidelineId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

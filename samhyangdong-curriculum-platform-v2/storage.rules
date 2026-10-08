@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /guidelines/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/teachers/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /opsPlans/{planId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null; // 세부계획 첨부자료(사진 등) 업로드 — 교사 전원 허용
+    }
+  }
+}
