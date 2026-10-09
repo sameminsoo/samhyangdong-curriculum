@@ -68,15 +68,29 @@ onAuthStateChanged(auth, (user) => {
 });
 
 async function initAppContent() {
-  try {
-    const res = await fetch('./js/data/curriculum-structure.json');
-    if (!res.ok) throw new Error("JSON 로드 실패");
-    curriculumData = await res.json();
-    
+  const paths = [
+    './js/data/curriculum-structure.json',
+    './data/curriculum-structure.json',
+    '../data/curriculum-structure.json'
+  ];
+  
+  let loaded = false;
+  for (const path of paths) {
+    try {
+      const res = await fetch(path);
+      if (res.ok) {
+        curriculumData = await res.json();
+        loaded = true;
+        break;
+      }
+    } catch (e) {}
+  }
+
+  if (loaded && curriculumData) {
     renderSidebar();
     renderDashboardTable();
-  } catch (err) {
-    console.error("데이터 로드 오류:", err);
+  } else {
+    console.error("curriculum-structure.json 파일을 찾을 수 없습니다.");
   }
 }
 
@@ -182,7 +196,6 @@ function getInitialTemplate() {
   `;
 }
 
-// 로그인 실행 함수
 async function handleLogin() {
   const email = loginEmail.value.trim();
   const password = loginPassword.value.trim();
@@ -216,11 +229,7 @@ async function handleLogin() {
   }
 }
 
-// 이벤트 등록
-if (loginBtn) {
-  loginBtn.addEventListener('click', handleLogin);
-}
-
+if (loginBtn) loginBtn.addEventListener('click', handleLogin);
 if (loginPassword) {
   loginPassword.addEventListener('keyup', (e) => {
     if (e.key === 'Enter') handleLogin();
