@@ -53,14 +53,17 @@ onAuthStateChanged(auth, (user) => {
     if (userName) userName.innerText = `👤 ${userEmailPrefix} 선생님`;
     if (btnLogout) btnLogout.classList.remove('view--hidden');
     
+    // 로그인 상태면 로그인 화면 숨기고 대시보드 표시
     if (viewLogin) viewLogin.classList.add('view--hidden');
     if (viewDashboard) viewDashboard.classList.remove('view--hidden');
+    if (viewEditor) viewEditor.classList.add('view--hidden');
     
     initAppContent();
   } else {
     if (userName) userName.innerText = "";
     if (btnLogout) btnLogout.classList.add('view--hidden');
     
+    // 비로그인 상태면 로그인 창만 표시
     if (viewLogin) viewLogin.classList.remove('view--hidden');
     if (viewDashboard) viewDashboard.classList.add('view--hidden');
     if (viewEditor) viewEditor.classList.add('view--hidden');
@@ -68,14 +71,15 @@ onAuthStateChanged(auth, (user) => {
 });
 
 async function initAppContent() {
-  const paths = [
+  const possiblePaths = [
+    'js/data/curriculum-structure.json',
     './js/data/curriculum-structure.json',
-    './data/curriculum-structure.json',
-    '../data/curriculum-structure.json'
+    'data/curriculum-structure.json',
+    './data/curriculum-structure.json'
   ];
   
   let loaded = false;
-  for (const path of paths) {
+  for (const path of possiblePaths) {
     try {
       const res = await fetch(path);
       if (res.ok) {
@@ -90,7 +94,7 @@ async function initAppContent() {
     renderSidebar();
     renderDashboardTable();
   } else {
-    console.error("curriculum-structure.json 파일을 찾을 수 없습니다.");
+    console.error("curriculum-structure.json 로드 실패");
   }
 }
 
