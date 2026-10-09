@@ -4,59 +4,62 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>삼향동초 교육과정 플랫폼</title>
-  <link rel="stylesheet" href="./css/style.css">
   <style>
-    /* CSS 로딩 실패 대비 기본 비상 스타일 */
-    body { margin: 0; font-family: sans-serif; background-color: #f4f6f9; }
-    .header { background: #1e293b; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-    .app-container { display: flex; min-height: calc(100vh - 60px); }
-    .sidebar { width: 240px; background: #ffffff; border-right: 1px solid #e2e8f0; padding: 20px; }
-    .main-content { flex: 1; padding: 30px; }
-    .login-container { display: flex; justify-content: center; align-items: center; padding-top: 50px; }
-    .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-    .login-card input { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; }
-    .login-card button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-    .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-    .data-table th, .data-table td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; text-align: left; }
-    .data-table th { background: #f8fafc; }
-    .nav-item { padding: 10px 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; color: #334155; }
-    .nav-item:hover { background: #f1f5f9; }
-    .nav-group-title { font-weight: bold; margin: 15px 0 8px 0; color: #64748b; font-size: 13px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; color: #1e293b; }
+    .header { background: #0f172a; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .header__logo { font-size: 18px; font-weight: 700; }
+    .app-container { display: flex; min-height: calc(100vh - 61px); }
+    .sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; padding: 20px; flex-shrink: 0; }
+    .main-content { flex: 1; padding: 32px; max-width: 1200px; }
+    .login-container { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
+    .login-card { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border: 1px solid #f1f5f9; }
+    .login-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #0f172a; }
+    .login-card p { font-size: 14px; color: #64748b; margin-bottom: 24px; }
+    .login-card input { width: 100%; padding: 12px 16px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; }
+    .login-card input:focus { border-color: #2563eb; }
+    .login-card button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .login-card button:hover { background: #1d4ed8; }
+    .data-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .data-table th, .data-table td { padding: 14px 18px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; }
+    .data-table th { background: #f8fafc; font-weight: 600; color: #475569; }
+    .nav-item { padding: 10px 14px; margin-bottom: 4px; border-radius: 8px; cursor: pointer; color: #334155; font-size: 14px; font-weight: 500; }
+    .nav-item:hover { background: #f1f5f9; color: #2563eb; }
+    .nav-group-title { font-weight: 700; margin: 20px 0 8px 12px; color: #94a3b8; font-size: 12px; text-transform: uppercase; }
     .hidden { display: none !important; }
+    .btn-logout { padding: 6px 14px; background: #334155; color: white; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
   </style>
 </head>
 <body>
   <header class="header">
-    <div style="font-weight: bold; font-size: 18px;">🏫 삼향동초 교육과정 플랫폼</div>
+    <div class="header__logo">🏫 삼향동초 교육과정 플랫폼</div>
     <div>
-      <span id="userName" style="color: #ffffff; font-weight: 500;"></span>
-      <button id="btnLogout" class="hidden" style="margin-left: 10px; padding: 6px 12px; background: #475569; color: white; border: none; border-radius: 4px; cursor: pointer;">로그아웃</button>
+      <span id="userName" style="color: #ffffff; font-weight: 500; font-size: 14px; margin-right: 8px;"></span>
+      <button id="btnLogout" class="btn-logout hidden">로그아웃</button>
     </div>
   </header>
 
   <div class="app-container">
-    <aside class="sidebar hidden" id="sidebarNav">
-      <!-- 사이드바 메뉴 -->
-    </aside>
+    <aside class="sidebar hidden" id="sidebarNav"></aside>
 
     <main class="main-content">
       <!-- 1. 로그인 화면 -->
       <section id="view-login" class="login-container">
         <div class="login-card">
-          <h2 style="margin-top:0;">삼향동초 교육과정 플랫폼</h2>
-          <p style="color:#64748b; margin-bottom: 24px;">교직원 계정으로 로그인해주세요.</p>
+          <h2>삼향동초 교육과정 플랫폼</h2>
+          <p>교직원 계정으로 로그인해주세요.</p>
           <div>
             <input type="email" id="loginEmail" placeholder="학교 이메일">
             <input type="password" id="loginPassword" placeholder="비밀번호">
             <button type="button" id="btnLoginSubmit">로그인</button>
           </div>
-          <div id="loginMessage" style="margin-top: 15px; font-size: 14px; font-weight: bold;"></div>
+          <div id="loginMessage" style="margin-top: 16px; font-size: 13px; font-weight: 600;"></div>
         </div>
       </section>
 
       <!-- 2. 대시보드 화면 -->
       <section id="view-dashboard" class="hidden">
-        <h1 id="pageTitle" style="margin-top:0;">대시보드</h1>
+        <h1 id="pageTitle" style="font-size: 22px; font-weight: 700; margin-bottom: 24px;">대시보드</h1>
         <table id="opsPlanTable" class="data-table">
           <thead>
             <tr>
@@ -75,17 +78,297 @@
       <!-- 3. 업무 편집 화면 -->
       <section id="view-editor" class="hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-          <h2 id="editorTitle" style="margin:0;">업무 편집</h2>
+          <h2 id="editorTitle" style="font-size: 20px; font-weight: 700;">업무 편집</h2>
           <div>
-            <span id="editorSaveStatus" style="margin-right:15px; font-weight:bold;"></span>
-            <button id="btnSaveEditor" style="padding:8px 16px; background:#2563eb; color:white; border:none; border-radius:6px; cursor:pointer;">저장하기</button>
+            <span id="editorSaveStatus" style="margin-right:16px; font-size:14px; font-weight:600;"></span>
+            <button id="btnSaveEditor" style="padding:10px 20px; background:#2563eb; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer;">저장하기</button>
           </div>
         </div>
-        <div id="editorArea" contenteditable="true" style="background:white; padding:25px; border-radius:8px; border:1px solid #cbd5e1; min-height:400px;"></div>
+        <div id="editorArea" contenteditable="true" style="background:white; padding:32px; border-radius:12px; border:1px solid #e2e8f0; min-height:450px; box-shadow:0 1px 3px rgba(0,0,0,0.05);"></div>
       </section>
     </main>
   </div>
 
-  <script type="module" src="./js/app.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCguRGFdOjO7ezQjOcrKTUwqICABZlXVb0",
+      authDomain: "samhyangdong-curriculum-604b2.firebaseapp.com",
+      projectId: "samhyangdong-curriculum-604b2",
+      storageBucket: "samhyangdong-curriculum-604b2.firebasestorage.app",
+      messagingSenderId: "957384809335",
+      appId: "1:957384809335:web:4f81449831187c07c51f72"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let curriculumData = null;
+    let currentDeptId = null;
+
+    const sidebarNav = document.getElementById('sidebarNav');
+    const opsPlanTable = document.getElementById('opsPlanTable');
+    const viewLogin = document.getElementById('view-login');
+    const viewDashboard = document.getElementById('view-dashboard');
+    const viewEditor = document.getElementById('view-editor');
+    const pageTitle = document.getElementById('pageTitle');
+    const editorTitle = document.getElementById('editorTitle');
+    const editorArea = document.getElementById('editorArea');
+    const btnSaveEditor = document.getElementById('btnSaveEditor');
+    const editorSaveStatus = document.getElementById('editorSaveStatus');
+    const userName = document.getElementById('userName');
+    const btnLogout = document.getElementById('btnLogout');
+
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginBtn = document.getElementById('btnLoginSubmit');
+    const loginMessage = document.getElementById('loginMessage');
+
+    function showScreen(screen) {
+      if (viewLogin) viewLogin.classList.add('hidden');
+      if (viewDashboard) viewDashboard.classList.add('hidden');
+      if (viewEditor) viewEditor.classList.add('hidden');
+
+      if (screen === 'login') {
+        if (viewLogin) viewLogin.classList.remove('hidden');
+        if (sidebarNav) sidebarNav.classList.add('hidden');
+      } else if (screen === 'dashboard') {
+        if (viewDashboard) viewDashboard.classList.remove('hidden');
+        if (sidebarNav) sidebarNav.classList.remove('hidden');
+      } else if (screen === 'editor') {
+        if (viewEditor) viewEditor.classList.remove('hidden');
+        if (sidebarNav) sidebarNav.classList.remove('hidden');
+      }
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userEmailPrefix = user.email.split('@')[0];
+        if (userName) userName.innerText = `👤 ${userEmailPrefix} 선생님`;
+        if (btnLogout) btnLogout.classList.remove('hidden');
+        
+        showScreen('dashboard');
+        initAppContent();
+      } else {
+        if (userName) userName.innerText = "";
+        if (btnLogout) btnLogout.classList.add('hidden');
+        
+        showScreen('login');
+      }
+    });
+
+    async function initAppContent() {
+      const paths = [
+        'js/data/curriculum-structure.json',
+        './js/data/curriculum-structure.json',
+        'data/curriculum-structure.json',
+        './data/curriculum-structure.json'
+      ];
+      
+      let loaded = false;
+      for (const path of paths) {
+        try {
+          const res = await fetch(path);
+          if (res.ok) {
+            curriculumData = await res.json();
+            loaded = true;
+            break;
+          }
+        } catch (e) {}
+      }
+
+      if (loaded && curriculumData) {
+        renderSidebar();
+        renderDashboardTable();
+      }
+    }
+
+    function renderSidebar() {
+      if (!sidebarNav || !curriculumData) return;
+      let html = `<div class="nav-item" data-view="dashboard">📊 대시보드</div>`;
+      if (curriculumData.parts) {
+        curriculumData.parts.forEach(part => {
+          html += `<div class="nav-group-title">${part.title}</div>`;
+          if (part.departments) {
+            part.departments.forEach(dept => {
+              html += `<div class="nav-item" data-view="editor" data-dept-id="${dept.id}">${dept.name}</div>`;
+            });
+          }
+        });
+      }
+      sidebarNav.innerHTML = html;
+    }
+
+    function renderDashboardTable() {
+      if (!opsPlanTable || !curriculumData) return;
+      const tbody = opsPlanTable.querySelector('tbody');
+      if (!tbody) return;
+
+      let rows = '';
+      let index = 1;
+      if (curriculumData.parts) {
+        curriculumData.parts.forEach(part => {
+          if (part.departments) {
+            part.departments.forEach(dept => {
+              rows += `
+                <tr style="cursor:pointer;" data-dept-id="${dept.id}">
+                  <td>${index++}</td>
+                  <td><strong>${dept.name}</strong></td>
+                  <td>${dept.owner || '담당자'}</td>
+                  <td>${dept.team || '교무부'}</td>
+                  <td><span style="background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:600;">작성전</span></td>
+                  <td><button style="padding:4px 10px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer; font-size:12px;">편집</button></td>
+                </tr>
+              `;
+            });
+          }
+        });
+      }
+      tbody.innerHTML = rows;
+    }
+
+    function switchView(viewName, deptId = null) {
+      currentDeptId = deptId;
+
+      if (viewName === 'dashboard') {
+        showScreen('dashboard');
+        if (pageTitle) pageTitle.innerText = "대시보드";
+      } else if (viewName === 'editor') {
+        showScreen('editor');
+        
+        let deptInfo = null;
+        if (curriculumData && curriculumData.parts) {
+          curriculumData.parts.forEach(p => {
+            if (p.departments) {
+              const found = p.departments.find(d => d.id === deptId);
+              if (found) deptInfo = found;
+            }
+          });
+        }
+
+        if (pageTitle) pageTitle.innerText = `${deptInfo ? deptInfo.name : '업무'} 편집`;
+        if (editorTitle) editorTitle.innerText = deptInfo ? deptInfo.name : '업무 편집';
+        
+        loadDeptContent(deptId);
+      }
+    }
+
+    async function loadDeptContent(deptId) {
+      if (!deptId) return;
+      if (editorSaveStatus) editorSaveStatus.innerText = "⏳ 데이터 불러오는 중...";
+
+      try {
+        const docRef = doc(db, "curriculum", deptId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists() && editorArea) {
+          editorArea.innerHTML = docSnap.data().content || getInitialTemplate();
+          if (editorSaveStatus) editorSaveStatus.innerText = "🟢 실시간 동기화됨";
+        } else if (editorArea) {
+          editorArea.innerHTML = getInitialTemplate();
+          if (editorSaveStatus) editorSaveStatus.innerText = "⚪ 작성된 내용이 없습니다.";
+        }
+      } catch (err) {
+        console.error("부서 읽기 오류:", err);
+        if (editorSaveStatus) editorSaveStatus.innerText = "🔴 불러오기 실패";
+      }
+    }
+
+    function getInitialTemplate() {
+      return `
+        <h3>가. 목적</h3><p>1) </p><br>
+        <h3>나. 방침</h3><p>1) </p><br>
+        <h3>다. 세부 계획</h3><p>※ 세부 추진 내용을 입력하세요.</p><br>
+        <h3>라. 기대 효과</h3><p>1) </p>
+      `;
+    }
+
+    async function handleLogin() {
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value.trim();
+
+      if (!email || !password) {
+        if (loginMessage) {
+          loginMessage.style.color = "#e74c3c";
+          loginMessage.innerText = "⚠️ 이메일과 비밀번호를 모두 입력해주세요.";
+        }
+        return;
+      }
+
+      if (loginMessage) {
+        loginMessage.style.color = "#2563eb";
+        loginMessage.innerText = "⏳ 로그인 처리 중입니다...";
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        if (loginMessage) loginMessage.innerText = "";
+      } catch (err) {
+        console.error(err);
+        if (loginMessage) {
+          loginMessage.style.color = "#e74c3c";
+          if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+            loginMessage.innerText = "❌ 이메일 또는 비밀번호가 올바르지 않습니다.";
+          } else {
+            loginMessage.innerText = "❌ 로그인 오류: " + err.message;
+          }
+        }
+      }
+    }
+
+    if (loginBtn) loginBtn.addEventListener('click', handleLogin);
+    if (loginPassword) {
+      loginPassword.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+    }
+
+    if (btnLogout) {
+      btnLogout.addEventListener('click', async () => {
+        if (confirm("로그아웃 하시겠습니까?")) {
+          await signOut(auth);
+        }
+      });
+    }
+
+    if (sidebarNav) {
+      sidebarNav.addEventListener('click', (e) => {
+        const item = e.target.closest('.nav-item');
+        if (!item) return;
+        switchView(item.dataset.view, item.dataset.deptId);
+      });
+    }
+
+    if (opsPlanTable) {
+      opsPlanTable.addEventListener('click', (e) => {
+        const tr = e.target.closest('tr');
+        if (tr && tr.dataset.deptId) switchView('editor', tr.dataset.deptId);
+      });
+    }
+
+    if (btnSaveEditor) {
+      btnSaveEditor.addEventListener('click', async () => {
+        if (!currentDeptId) return;
+        if (editorSaveStatus) editorSaveStatus.innerText = "⏳ 저장 중...";
+
+        try {
+          const content = editorArea ? editorArea.innerHTML : '';
+          await setDoc(doc(db, "curriculum", currentDeptId), {
+            content: content,
+            updatedAt: new Date().toISOString(),
+            updatedBy: auth.currentUser ? auth.currentUser.email : "익명"
+          }, { merge: true });
+
+          if (editorSaveStatus) editorSaveStatus.innerText = "✅ 저장 완료!";
+        } catch (err) {
+          if (editorSaveStatus) editorSaveStatus.innerText = "❌ 저장 실패: " + err.message;
+        }
+      });
+    }
+  </script>
 </body>
 </html>
