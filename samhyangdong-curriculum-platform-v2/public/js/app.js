@@ -1,169 +1,229 @@
-import {
-  auth, db, watchAuth, signInWithEmailAndPassword, signOut,
-  doc, getDoc, collection, onSnapshot,
-} from "./firebase.js";
-import { renderEditor, disposeEditor } from "./editor.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getAuth, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { 
+  getFirestore, 
+  doc, 
+  setDoc, 
+  getDoc 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-let structure = null;
-let planStatusMap = {}; // docId -> status (대시보드 진행률 표시용)
-
-const els = {
-  app: document.getElementById("app"),
-  sidebar: document.getElementById("sidebarMenu"),
-  main: document.getElementById("mainView"),
-  userBox: document.getElementById("userBox"),
-  loginScreen: document.getElementById("loginScreen"),
+// Firebase 설정 (복사해 오신 진짜 키 적용)
+const firebaseConfig = {
+  apiKey: "AIzaSyCguRGFdOjO7ezQjOcrKTUwqICABZlXVb0",
+  authDomain: "samhyangdong-curriculum-604b2.firebaseapp.com",
+  projectId: "samhyangdong-curriculum-604b2",
+  storageBucket: "samhyangdong-curriculum-604b2.firebasestorage.app",
+  messagingSenderId: "957384809335",
+  appId: "1:957384809335:web:4f81449831187c07c51f72"
 };
 
-async function loadStructure() {
-  const res = await fetch("./js/data/curriculum-structure.json");
-  structure = await res.json();
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let curriculumData = null;
+let currentView = 'dashboard';
+let currentDeptId = null;
+
+const sidebarNav = document.getElementById('sidebarNav');
+const opsPlanTable = document.getElementById('opsPlanTable');
+const viewDashboard = document.getElementById('view-dashboard');
+const viewEditor = document.getElementById('view-editor');
+const pageTitle = document.getElementById('pageTitle');
+const editorTitle = document.getElementById('editorTitle');
+const editorArea = document.getElementById('editorArea');
+const btnSaveEditor = document.getElementById('btnSaveEditor');
+const editorSaveStatus = document.getElementById('editorSaveStatus');
+const userNameBtn = document.getElementById('userName');
+
+// 로그인 상태 감지
+onAuthStateChanged(auth, (user) => {
+  if (user && userNameBtn) {
+    const userEmailPrefix = user.email.split('@')[0];
+    userNameBtn.innerText = `👤 ${userEmailPrefix} (로그아웃)`;
+  } else if (userNameBtn) {
+    userNameBtn.innerText = "🔑 교사 로그인";
+  }
+});
+
+// 앱 초기화 (경로를 현재 폴더 구조에 맞춰 ./js/data/... 로 수정함)
+async function initApp() {
+  try {
+    const res = await fetch('./js/data/curriculum-structure.json');
+    if (!res.ok) throw new Error("JSON 로드 실패");
+    curriculumData = await res.json();
+    
+    renderSidebar();
+    renderDashboardTable();
+    setupEventListeners();
+  } catch (err) {
+    console.error("앱 초기화 오류:", err);
+  }
 }
 
-function buildSidebar() {
-  const groups = {};
-  structure.plans.forEach((p) => {
-    groups[p.dept] = groups[p.dept] || [];
-    groups[p.dept].push(p);
-  });
-
-  els.sidebar.innerHTML = `
-    <button class="menu-item" data-route="dashboard">대시보드</button>
-    <button class="menu-item" data-route="survey">설문조사</button>
-    <button class="menu-item" data-route="guideline">교육청 지침</button>
-    <button class="menu-item" data-route="export">최종 취합(.hwpx)</button>
-    <div class="menu-divider">PART 03 · Ⅵ 교육과정 운영지원 (19개 세부계획)</div>
-    ${Object.entries(groups).map(([dept, items]) => `
-      <div class="menu-group">
-        <div class="menu-group-title">${dept}</div>
-        ${items.map((p) => `
-          <button class="menu-item menu-item-plan" data-route="editor" data-no="${p.no}">
-            <span class="plan-no">${String(p.no).padStart(2, "0")}</span>
-            <span class="plan-title">${p.title}</span>
-            <span class="plan-status" id="menuStatus-${p.no}"></span>
-          </button>
-        `).join("")}
-      </div>
-    `).join("")}
-  `;
-
-  els.sidebar.addEventListener("click", (e) => {
-    const btn = e.target.closest(".menu-item");
-    if (!btn) return;
-    route(btn.dataset.route, btn.dataset.no);
-  });
-}
-
-function watchAllPlanStatus() {
-  onSnapshot(collection(db, "opsPlans"), (qs) => {
-    qs.forEach((d) => {
-      planStatusMap[d.id] = d.data().status || "draft";
-      const no = Number(d.id);
-      const badge = document.getElementById(`menuStatus-${no}`);
-      if (badge) {
-        badge.textContent = planStatusMap[d.id] === "submitted" ? "제출완료" : "작성중";
-        badge.className = "plan-status " + (planStatusMap[d.id] === "submitted" ? "plan-status-done" : "plan-status-draft");
+function renderSidebar() {
+  if (!sidebarNav || !curriculumData) return;
+  let html = `<div class="nav-item active" data-view="dashboard">📊 대시보드</div>`;
+  if (curriculumData.parts) {
+    curriculumData.parts.forEach(part => {
+      html += `<div class="nav-group-title">${part.title}</div>`;
+      if (part.departments) {
+        part.departments.forEach(dept => {
+          html += `<div class="nav-item" data-view="editor" data-dept-id="${dept.id}">${dept.name}</div>`;
+        });
       }
     });
-    if (location.hash === "#dashboard" || location.hash === "") renderDashboard();
-  });
+  }
+  sidebarNav.innerHTML = html;
 }
 
-function renderDashboard() {
-  disposeEditor();
-  const total = structure.plans.length;
-  const done = structure.plans.filter((p) => planStatusMap[p.docId] === "submitted").length;
-  const pct = total ? Math.round((done / total) * 100) : 0;
+function renderDashboardTable() {
+  if (!opsPlanTable || !curriculumData) return;
+  const tbody = opsPlanTable.querySelector('tbody');
+  if (!tbody) return;
 
-  els.main.innerHTML = `
-    <h1>2026학년도 교육과정 수립 대시보드</h1>
-    <div class="card-grid">
-      <div class="metric-card">
-        <div class="metric-number">${pct}%</div>
-        <div class="metric-label">부서별 세부계획 제출률 (${done}/${total})</div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-number">${total - done}</div>
-        <div class="metric-label">작성 중 / 미제출 세부계획</div>
-      </div>
-    </div>
-    <h2>부서별 진행 현황</h2>
-    <table class="status-table">
-      <thead><tr><th>번호</th><th>세부계획명</th><th>담당부서</th><th>담당자</th><th>상태</th></tr></thead>
-      <tbody>
-        ${structure.plans.map((p) => `
-          <tr>
-            <td>${String(p.no).padStart(2, "0")}</td>
-            <td><a href="#editor-${p.no}">${p.title}</a></td>
-            <td>${p.dept}</td>
-            <td>${p.owners.join(", ")}</td>
-            <td>${planStatusMap[p.docId] === "submitted" ? '<span class="plan-status-done">제출완료</span>' : '<span class="plan-status-draft">작성중</span>'}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
+  let rows = '';
+  let index = 1;
+  if (curriculumData.parts) {
+    curriculumData.parts.forEach(part => {
+      if (part.departments) {
+        part.departments.forEach(dept => {
+          rows += `
+            <tr style="cursor:pointer;" data-dept-id="${dept.id}">
+              <td>${index++}</td>
+              <td><strong>${dept.name}</strong></td>
+              <td>${dept.owner || '담당자'}</td>
+              <td>${dept.team || '교무부'}</td>
+              <td><span class="badge">작성전</span></td>
+              <td><button class="btn btn--sm">편집</button></td>
+            </tr>
+          `;
+        });
+      }
+    });
+  }
+  tbody.innerHTML = rows;
+}
+
+function switchView(viewName, deptId = null) {
+  currentView = viewName;
+  currentDeptId = deptId;
+
+  if (viewName === 'dashboard') {
+    if (viewDashboard) viewDashboard.classList.remove('view--hidden');
+    if (viewEditor) viewEditor.classList.add('view--hidden');
+    if (pageTitle) pageTitle.innerText = "대시보드";
+  } else if (viewName === 'editor') {
+    if (viewDashboard) viewDashboard.classList.add('view--hidden');
+    if (viewEditor) viewEditor.classList.remove('view--hidden');
+    
+    let deptInfo = null;
+    curriculumData.parts.forEach(p => {
+      if (p.departments) {
+        const found = p.departments.find(d => d.id === deptId);
+        if (found) deptInfo = found;
+      }
+    });
+
+    if (pageTitle) pageTitle.innerText = `${deptInfo ? deptInfo.name : '업무'} 편집`;
+    if (editorTitle) editorTitle.innerText = deptInfo ? deptInfo.name : '업무 편집';
+    
+    loadDeptContent(deptId);
+  }
+}
+
+async function loadDeptContent(deptId) {
+  if (!deptId) return;
+  if (editorSaveStatus) editorSaveStatus.innerText = "⏳ 데이터 불러오는 중...";
+
+  try {
+    const docRef = doc(db, "curriculum", deptId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists() && editorArea) {
+      editorArea.innerHTML = docSnap.data().content || getInitialTemplate();
+      if (editorSaveStatus) editorSaveStatus.innerText = "🟢 Cloud Firestore 동기화됨";
+    } else if (editorArea) {
+      editorArea.innerHTML = getInitialTemplate();
+      if (editorSaveStatus) editorSaveStatus.innerText = "⚪ 작성된 내용이 없습니다.";
+    }
+  } catch (err) {
+    console.error("부서 읽기 오류:", err);
+    if (editorSaveStatus) editorSaveStatus.innerText = "🔴 불러오기 실패";
+  }
+}
+
+function getInitialTemplate() {
+  return `
+    <h3>가. 목적</h3><p>1) </p>
+    <h3>나. 방침</h3><p>1) </p>
+    <h3>다. 세부 계획</h3><p>※ 세부 추진 내용을 입력하세요.</p>
+    <h3>라. 기대 효과</h3><p>1) </p>
   `;
 }
 
-function route(name, no) {
-  disposeEditor();
-  if (name === "editor") {
-    location.hash = `editor-${no}`;
-    renderEditor(els.main, no, auth.currentUser);
-  } else {
-    location.hash = name;
-    if (name === "dashboard") renderDashboard();
-    else els.main.innerHTML = `<p class="empty">[${name}] 화면은 다음 단계에서 연동 예정입니다.</p>`;
+function setupEventListeners() {
+  if (userNameBtn) {
+    userNameBtn.addEventListener('click', async () => {
+      if (auth.currentUser) {
+        if (confirm("로그아웃 하시겠습니까?")) {
+          await signOut(auth);
+        }
+      } else {
+        const email = prompt("이메일 주소를 입력하세요:");
+        if (!email) return;
+        const password = prompt("비밀번호를 입력하세요:");
+        if (!password) return;
+
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          alert("로그인되었습니다.");
+        } catch (err) {
+          alert("로그인 실패: " + err.message);
+        }
+      }
+    });
+  }
+
+  if (sidebarNav) {
+    sidebarNav.addEventListener('click', (e) => {
+      const item = e.target.closest('.nav-item');
+      if (!item) return;
+      switchView(item.dataset.view, item.dataset.deptId);
+    });
+  }
+
+  if (opsPlanTable) {
+    opsPlanTable.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr');
+      if (tr && tr.dataset.deptId) switchView('editor', tr.dataset.deptId);
+    });
+  }
+
+  if (btnSaveEditor) {
+    btnSaveEditor.addEventListener('click', async () => {
+      if (!currentDeptId) return;
+      if (editorSaveStatus) editorSaveStatus.innerText = "⏳ 저장 중...";
+
+      try {
+        const content = editorArea ? editorArea.innerHTML : '';
+        await setDoc(doc(db, "curriculum", currentDeptId), {
+          content: content,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.currentUser ? auth.currentUser.email : "익명"
+        }, { merge: true });
+
+        if (editorSaveStatus) editorSaveStatus.innerText = "✅ Firestore 실시간 저장 완료!";
+      } catch (err) {
+        if (editorSaveStatus) editorSaveStatus.innerText = "❌ 저장 실패: " + err.message;
+      }
+    });
   }
 }
 
-function handleInitialHash() {
-  const h = location.hash.replace("#", "");
-  if (h.startsWith("editor-")) {
-    route("editor", h.split("-")[1]);
-  } else if (h) {
-    route(h);
-  } else {
-    route("dashboard");
-  }
-}
-
-// ---------------- 로그인 ----------------
-function showLogin(show) {
-  els.loginScreen.style.display = show ? "flex" : "none";
-  els.app.style.display = show ? "none" : "grid";
-}
-
-els.loginScreen?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("loginEmail").value;
-  const pw = document.getElementById("loginPassword").value;
-  const errBox = document.getElementById("loginError");
-  errBox.textContent = "";
-  try {
-    await signInWithEmailAndPassword(auth, email, pw);
-  } catch (err) {
-    errBox.textContent = "로그인 실패: 이메일/비밀번호를 확인해주세요.";
-  }
-});
-
-document.getElementById("btnLogout")?.addEventListener("click", () => signOut(auth));
-
-watchAuth(async (user) => {
-  if (!user) {
-    showLogin(true);
-    return;
-  }
-  showLogin(false);
-  els.userBox.textContent = `${user.displayName || user.email} 님`;
-  if (!structure) {
-    await loadStructure();
-    buildSidebar();
-    watchAllPlanStatus();
-    handleInitialHash();
-  }
-});
-
-window.addEventListener("hashchange", () => {
-  if (auth.currentUser) handleInitialHash();
-});
+document.addEventListener('DOMContentLoaded', initApp);
