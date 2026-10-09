@@ -46,27 +46,38 @@ const loginPassword = document.getElementById('loginPassword');
 const loginBtn = document.getElementById('btnLoginSubmit');
 const loginMessage = document.getElementById('loginMessage');
 
+// 화면 전환 함수
+function showScreen(screen) {
+  if (viewLogin) viewLogin.classList.add('hidden');
+  if (viewDashboard) viewDashboard.classList.add('hidden');
+  if (viewEditor) viewEditor.classList.add('hidden');
+
+  if (screen === 'login') {
+    if (viewLogin) viewLogin.classList.remove('hidden');
+    if (sidebarNav) sidebarNav.classList.add('hidden');
+  } else if (screen === 'dashboard') {
+    if (viewDashboard) viewDashboard.classList.remove('hidden');
+    if (sidebarNav) sidebarNav.classList.remove('hidden');
+  } else if (screen === 'editor') {
+    if (viewEditor) viewEditor.classList.remove('hidden');
+    if (sidebarNav) sidebarNav.classList.remove('hidden');
+  }
+}
+
 // 로그인 상태 감지
 onAuthStateChanged(auth, (user) => {
   if (user) {
     const userEmailPrefix = user.email.split('@')[0];
     if (userName) userName.innerText = `👤 ${userEmailPrefix} 선생님`;
-    if (btnLogout) btnLogout.classList.remove('view--hidden');
+    if (btnLogout) btnLogout.classList.remove('hidden');
     
-    // 로그인 상태면 로그인 화면 숨기고 대시보드 표시
-    if (viewLogin) viewLogin.classList.add('view--hidden');
-    if (viewDashboard) viewDashboard.classList.remove('view--hidden');
-    if (viewEditor) viewEditor.classList.add('view--hidden');
-    
+    showScreen('dashboard');
     initAppContent();
   } else {
     if (userName) userName.innerText = "";
-    if (btnLogout) btnLogout.classList.add('view--hidden');
+    if (btnLogout) btnLogout.classList.add('hidden');
     
-    // 비로그인 상태면 로그인 창만 표시
-    if (viewLogin) viewLogin.classList.remove('view--hidden');
-    if (viewDashboard) viewDashboard.classList.add('view--hidden');
-    if (viewEditor) viewEditor.classList.add('view--hidden');
+    showScreen('login');
   }
 });
 
@@ -93,14 +104,12 @@ async function initAppContent() {
   if (loaded && curriculumData) {
     renderSidebar();
     renderDashboardTable();
-  } else {
-    console.error("curriculum-structure.json 로드 실패");
   }
 }
 
 function renderSidebar() {
   if (!sidebarNav || !curriculumData) return;
-  let html = `<div class="nav-item active" data-view="dashboard">📊 대시보드</div>`;
+  let html = `<div class="nav-item" data-view="dashboard">📊 대시보드</div>`;
   if (curriculumData.parts) {
     curriculumData.parts.forEach(part => {
       html += `<div class="nav-group-title">${part.title}</div>`;
@@ -131,8 +140,8 @@ function renderDashboardTable() {
               <td><strong>${dept.name}</strong></td>
               <td>${dept.owner || '담당자'}</td>
               <td>${dept.team || '교무부'}</td>
-              <td><span class="badge">작성전</span></td>
-              <td><button class="btn btn--sm">편집</button></td>
+              <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:4px; font-size:12px;">작성전</span></td>
+              <td><button style="padding:4px 8px; background:#2563eb; color:white; border:none; border-radius:4px; cursor:pointer;">편집</button></td>
             </tr>
           `;
         });
@@ -146,12 +155,10 @@ function switchView(viewName, deptId = null) {
   currentDeptId = deptId;
 
   if (viewName === 'dashboard') {
-    if (viewDashboard) viewDashboard.classList.remove('view--hidden');
-    if (viewEditor) viewEditor.classList.add('view--hidden');
+    showScreen('dashboard');
     if (pageTitle) pageTitle.innerText = "대시보드";
   } else if (viewName === 'editor') {
-    if (viewDashboard) viewDashboard.classList.add('view--hidden');
-    if (viewEditor) viewEditor.classList.remove('view--hidden');
+    showScreen('editor');
     
     let deptInfo = null;
     if (curriculumData && curriculumData.parts) {
@@ -213,7 +220,7 @@ async function handleLogin() {
   }
 
   if (loginMessage) {
-    loginMessage.style.color = "#3498db";
+    loginMessage.style.color = "#2563eb";
     loginMessage.innerText = "⏳ 로그인 처리 중입니다...";
   }
 
