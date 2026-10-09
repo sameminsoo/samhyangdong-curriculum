@@ -12,7 +12,7 @@ import {
   getDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase 설정 (복사해 오신 진짜 키 적용)
+// Firebase 실제 연동 설정
 const firebaseConfig = {
   apiKey: "AIzaSyCguRGFdOjO7ezQjOcrKTUwqICABZlXVb0",
   authDomain: "samhyangdong-curriculum-604b2.firebaseapp.com",
@@ -30,8 +30,10 @@ let curriculumData = null;
 let currentView = 'dashboard';
 let currentDeptId = null;
 
+// DOM 요소 참조
 const sidebarNav = document.getElementById('sidebarNav');
 const opsPlanTable = document.getElementById('opsPlanTable');
+const viewLogin = document.getElementById('view-login');
 const viewDashboard = document.getElementById('view-dashboard');
 const viewEditor = document.getElementById('view-editor');
 const pageTitle = document.getElementById('pageTitle');
@@ -39,20 +41,39 @@ const editorTitle = document.getElementById('editorTitle');
 const editorArea = document.getElementById('editorArea');
 const btnSaveEditor = document.getElementById('btnSaveEditor');
 const editorSaveStatus = document.getElementById('editorSaveStatus');
-const userNameBtn = document.getElementById('userName');
+const userName = document.getElementById('userName');
+const btnLogout = document.getElementById('btnLogout');
 
-// 로그인 상태 감지
+const loginForm = document.getElementById('loginForm');
+const loginEmail = document.getElementById('loginEmail');
+const loginPassword = document.getElementById('loginPassword');
+const loginMessage = document.getElementById('loginMessage');
+
+// 로그인 상태 변경 감지
 onAuthStateChanged(auth, (user) => {
-  if (user && userNameBtn) {
+  if (user) {
     const userEmailPrefix = user.email.split('@')[0];
-    userNameBtn.innerText = `👤 ${userEmailPrefix} (로그아웃)`;
-  } else if (userNameBtn) {
-    userNameBtn.innerText = "🔑 교사 로그인";
+    if (userName) userName.innerText = `👤 ${userEmailPrefix} 선생님`;
+    if (btnLogout) btnLogout.classList.remove('view--hidden');
+    
+    // 로그인 완료 시 대시보드 화면 전환
+    if (viewLogin) viewLogin.classList.add('view--hidden');
+    if (viewDashboard) viewDashboard.classList.remove('view--hidden');
+    
+    initAppContent();
+  } else {
+    if (userName) userName.innerText = "";
+    if (btnLogout) btnLogout.classList.add('view--hidden');
+    
+    // 로그아웃 상태 시 로그인 화면 표시
+    if (viewLogin) viewLogin.classList.remove('view--hidden');
+    if (viewDashboard) viewDashboard.classList.add('view--hidden');
+    if (viewEditor) viewEditor.classList.add('view--hidden');
   }
 });
 
-// 앱 초기화 (경로를 현재 폴더 구조에 맞춰 ./js/data/... 로 수정함)
-async function initApp() {
+// 데이터 로드
+async function initAppContent() {
   try {
     const res = await fetch('./js/data/curriculum-structure.json');
     if (!res.ok) throw new Error("JSON 로드 실패");
@@ -60,9 +81,8 @@ async function initApp() {
     
     renderSidebar();
     renderDashboardTable();
-    setupEventListeners();
   } catch (err) {
-    console.error("앱 초기화 오류:", err);
+    console.error("데이터 로드 오류:", err);
   }
 }
 
@@ -123,12 +143,14 @@ function switchView(viewName, deptId = null) {
     if (viewEditor) viewEditor.classList.remove('view--hidden');
     
     let deptInfo = null;
-    curriculumData.parts.forEach(p => {
-      if (p.departments) {
-        const found = p.departments.find(d => d.id === deptId);
-        if (found) deptInfo = found;
-      }
-    });
+    if (curriculumData && curriculumData.parts) {
+      curriculumData.parts.forEach(p => {
+        if (p.departments) {
+          const found = p.departments.find(d => d.id === deptId);
+          if (found) deptInfo = found;
+        }
+      });
+    }
 
     if (pageTitle) pageTitle.innerText = `${deptInfo ? deptInfo.name : '업무'} 편집`;
     if (editorTitle) editorTitle.innerText = deptInfo ? deptInfo.name : '업무 편집';
@@ -167,29 +189,47 @@ function getInitialTemplate() {
   `;
 }
 
+// 이벤트 연결
 function setupEventListeners() {
-  if (userNameBtn) {
-    userNameBtn.addEventListener('click', async () => {
-      if (auth.currentUser) {
-        if (confirm("로그아웃 하시겠습니까?")) {
-          await signOut(auth);
-        }
-      } else {
-        const email = prompt("이메일 주소를 입력하세요:");
-        if (!email) return;
-        const password = prompt("비밀번호를 입력하세요:");
-        if (!password) return;
+  // 로그인 폼 제출 이벤트
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value.trim();
 
-        try {
-          await signInWithEmailAndPassword(auth, email, password);
-          alert("로그인되었습니다.");
-        } catch (err) {
-          alert("로그인 실패: " + err.message);
+      if (loginMessage) {
+        loginMessage.style.color = "#3498db";
+        loginMessage.innerText = "⏳ 로그인 처리 중입니다...";
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        if (loginMessage) loginMessage.innerText = "";
+      } catch (err) {
+        console.error(err);
+        if (loginMessage) {
+          loginMessage.style.color = "#e74c3c";
+          if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+            loginMessage.innerText = "❌ 이메일 또는 비밀번호가 올바르지 않습니다.";
+          } else {
+            loginMessage.innerText = "❌ 로그인 오류: " + err.message;
+          }
         }
       }
     });
   }
 
+  // 로그아웃 버튼
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async () => {
+      if (confirm("로그아웃 하시겠습니까?")) {
+        await signOut(auth);
+      }
+    });
+  }
+
+  // 사이드바
   if (sidebarNav) {
     sidebarNav.addEventListener('click', (e) => {
       const item = e.target.closest('.nav-item');
@@ -198,6 +238,7 @@ function setupEventListeners() {
     });
   }
 
+  // 대시보드 테이블
   if (opsPlanTable) {
     opsPlanTable.addEventListener('click', (e) => {
       const tr = e.target.closest('tr');
@@ -205,6 +246,7 @@ function setupEventListeners() {
     });
   }
 
+  // 저장 버튼
   if (btnSaveEditor) {
     btnSaveEditor.addEventListener('click', async () => {
       if (!currentDeptId) return;
@@ -226,4 +268,4 @@ function setupEventListeners() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', setupEventListeners);
