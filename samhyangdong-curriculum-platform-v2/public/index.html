@@ -21,21 +21,21 @@
     </aside>
 
     <main class="main-content">
-      <!-- 1. 로그인 화면 (중앙 폼) -->
+      <!-- 1. 로그인 화면 -->
       <section id="view-login" class="login-container">
         <div class="login-card">
           <h2>삼향동초 교육과정 플랫폼</h2>
           <p>교직원 계정으로 로그인해주세요.</p>
-          <form id="loginForm">
-            <input type="email" id="loginEmail" placeholder="학교 이메일" required autocomplete="username">
-            <input type="password" id="loginPassword" placeholder="비밀번호" required autocomplete="current-password">
-            <button type="submit" id="btnLoginSubmit" class="btn btn--primary">로그인</button>
-          </form>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="email" id="loginEmail" placeholder="학교 이메일">
+            <input type="password" id="loginPassword" placeholder="비밀번호">
+            <button type="button" id="btnLoginSubmit" class="btn btn--primary">로그인</button>
+          </div>
           <div id="loginMessage" style="margin-top: 15px; font-size: 14px; font-weight: bold; text-align: center;"></div>
         </div>
       </section>
 
-      <!-- 2. 로그인 후 대시보드 화면 -->
+      <!-- 2. 대시보드 화면 -->
       <section id="view-dashboard" class="view--hidden">
         <h1 id="pageTitle">대시보드</h1>
         <table id="opsPlanTable" class="data-table">
